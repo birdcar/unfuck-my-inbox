@@ -1,36 +1,129 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Unfuck My Inbox
 
-## Getting Started
+Your inbox is a disaster. Thousands of unread emails, newsletters you forgot you signed up for, promo spam that somehow bypasses filters, and somewhere in that mess are actual important emails you keep missing.
 
-First, run the development server:
+You've tried inbox zero. You've tried filters. You've tried that thing where you just declare email bankruptcy and archive everything. None of it sticks because the same garbage keeps rolling in.
+
+This app fixes that. It scans your Gmail, figures out what's noise vs. signal, creates a label taxonomy that actually makes sense for how *you* work, and sets up filters to keep it that way. When it's not sure about something, it asks you instead of guessing wrong.
+
+Built for developers who live in their inbox and are tired of the cognitive load of sorting through crap.
+
+## What it does
+
+- **Scans your inbox** - Analyzes your email patterns to understand what matters
+- **Creates smart labels** - Proposes a hierarchical label structure based on your actual usage
+- **Aggressive cleanup** - Trashes obvious noise, archives the rest, keeps what's important
+- **Sets up filters** - Creates Gmail filters so the organization sticks
+- **Batch triage** - Queues uncertain emails for quick yes/no decisions
+- **Tracks everything** - Full audit log so you can see what happened and undo if needed
+
+## Tech stack
+
+- Next.js 16 (App Router)
+- WorkOS AuthKit (auth)
+- WorkOS Pipes (Gmail OAuth)
+- WorkOS Widgets (user settings UI)
+- Drizzle ORM + Postgres
+- Radix UI Themes
+
+## Setup
+
+### Prerequisites
+
+- [Bun](https://bun.sh) (or npm/pnpm if you prefer)
+- Docker (for local Postgres)
+- A [WorkOS](https://workos.com) account
+- A Google Cloud project with Gmail API enabled
+
+### 1. Clone and install
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
+git clone https://github.com/birdcar/unfuck-my-inbox.git
+cd unfuck-my-inbox
+bun install
+```
+
+### 2. Set up environment
+
+Copy the example env file:
+
+```bash
+cp .env.example .env.local
+```
+
+Fill in your values:
+
+```bash
+# WorkOS (grab these from your WorkOS Dashboard)
+WORKOS_API_KEY=sk_test_...
+WORKOS_CLIENT_ID=client_...
+WORKOS_COOKIE_PASSWORD=  # Generate a random 32+ char string
+
+# Database
+DATABASE_URL=postgres://postgres:postgres@localhost:5432/unfuck_inbox
+
+# App
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_WORKOS_REDIRECT_URI=http://localhost:3000/auth/v1/callback
+```
+
+### 3. Configure WorkOS
+
+In your WorkOS Dashboard:
+
+1. **AuthKit**: Add `http://localhost:3000/auth/v1/callback` as a redirect URI
+2. **Pipes**: Set up a Google provider with your OAuth credentials and Gmail scopes
+
+### 4. Set up the database
+
+Start Postgres:
+
+```bash
+docker compose up -d
+```
+
+Run migrations:
+
+```bash
+bun run db:migrate
+```
+
+### 5. Run it
+
+```bash
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Hit `http://localhost:3000`, sign up, connect your Gmail, and watch the magic happen.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Development
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+bun dev          # Start dev server (webpack)
+bun dev:turbo    # Start with Turbopack (faster, but newer)
+bun run build    # Production build
+bun run lint     # Run ESLint
+bun run typecheck # Run TypeScript checks
+```
 
-## Learn More
+## Project structure
 
-To learn more about Next.js, take a look at the following resources:
+```
+src/
+├── app/                    # Next.js App Router pages
+│   ├── auth/v1/callback/   # WorkOS OAuth callback
+│   ├── dashboard/          # Main app (protected)
+│   │   └── settings/       # User settings (connections, profile, etc.)
+│   └── api/                # API routes
+├── components/             # React components
+├── lib/                    # Utilities and helpers
+└── proxy.ts                # Next.js 16 proxy (auth middleware)
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Status
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+This is early. Phase 1 (auth + Gmail connection) is done. The actual inbox scanning and cleanup logic is coming in phases 2-4. Check the `docs/ideation/` folder if you want to see the roadmap.
 
-## Deploy on Vercel
+## License
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+MIT
